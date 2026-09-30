@@ -1,0 +1,418 @@
+package handlers
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"github.com/vnkmasc/Kmasc/app/backend/internal/common"
+	"github.com/vnkmasc/Kmasc/app/backend/internal/models"
+	"github.com/vnkmasc/Kmasc/app/backend/internal/service"
+	"github.com/vnkmasc/Kmasc/app/backend/utils"
+	"github.com/xuri/excelize/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+type UserHandler struct {
+	userService service.UserService
+}
+
+func NewUserHandler(s service.UserService) *UserHandler {
+	return &UserHandler{
+		userService: s,
+	}
+}
+
+func (h *UserHandler) GetUserByID(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		return
+	}
+
+	userResp, err := h.userService.GetUserByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Không tìm thấy sinh viên"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": userResp})
+}
+
+func (h *UserHandler) SearchUsers(c *gin.Context) {
+
+	var params models.SearchUserParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		c.JSON(400, gin.H{"error": "Tham số không hợp lệ"})
+		return
+	}
+
+	if params.Page < 1 {
+		params.Page = 1
+	}
+	if params.PageSize < 1 {
+		params.PageSize = 10
+	}
+
+	users, total, err := h.userService.SearchUsers(c.Request.Context(), params)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"data":       users,
+		"total":      total,
+		"page":       params.Page,
+		"page_size":  params.PageSize,
+		"total_page": (total + int64(params.PageSize) - 1) / int64(params.PageSize),
+	})
+}
+
+func (h *UserHandler) GetMyProfile(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	user, err := h.userService.GetMyProfile(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandler) CreateUser(c *gin.Context) {
+	val, exists := c.Get("claims")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại"})
+		return
+	}
+	claims, ok := val.(*utils.CustomClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại"})
+		return
+	}
+
+	var req models.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		if errs, ok := common.ParseValidationError(err); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": errs})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	resp, err := h.userService.CreateUser(c.Request.Context(), claims, &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, common.ErrUnauthorized):
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại"})
+		case errors.Is(err, common.ErrInvalidToken):
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại"})
+		case errors.Is(err, common.ErrStudentIDExists):
+			c.JSON(http.StatusConflict, gin.H{"error": "Mã sinh viên đã tồn tại"})
+		case errors.Is(err, common.ErrEmailExists):
+			c.JSON(http.StatusConflict, gin.H{"error": "Email đã tồn tại"})
+		case errors.Is(err, common.ErrUniversityNotFound):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Không tìm thấy trường đại học"})
+		case errors.Is(err, common.ErrFacultyNotFound):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Không tìm thấy chuyên ngành"})
+		case errors.Is(err, service.ErrStudentEmailDomain):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			fmt.Printf("CreateUser unexpected error: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi hệ thống, vui lòng thử lại sau"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": resp})
+}
+
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID không hợp lệ"})
+		return
+	}
+
+	var req models.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		if errs, ok := common.ParseValidationError(err); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"errors": errs})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Dữ liệu không hợp lệ"})
+		}
+		return
+	}
+
+	claimsVal := c.Request.Context().Value(utils.ClaimsContextKey)
+	claims, ok := claimsVal.(*utils.CustomClaims)
+	if !ok || claims == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Bạn không có quyền thực hiện thao tác này"})
+		return
+	}
+
+	ctx := context.WithValue(c.Request.Context(), utils.ClaimsContextKey, claims)
+
+	err = h.userService.UpdateUser(ctx, id, req)
+	if err != nil {
+		log.Printf("UpdateUser Error: %v\n", err)
+		if errors.Is(err, service.ErrStudentEmailDomain) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		switch err {
+		case common.ErrStudentIDExists:
+			c.JSON(http.StatusConflict, gin.H{"error": "Mã sinh viên đã tồn tại"})
+		case common.ErrEmailExists:
+			c.JSON(http.StatusConflict, gin.H{"error": "Email đã tồn tại"})
+		case common.ErrUniversityNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "Trường đại học không tồn tại"})
+		case common.ErrFacultyNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "Chuyên ngành không tồn tại"})
+		case common.ErrUnauthorized, common.ErrInvalidToken:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Bạn không có quyền thực hiện thao tác này"})
+		default:
+			if err.Error() == "không có trường nào để cập nhật" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi hệ thống, vui lòng thử lại"})
+			}
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Đã cập nhật hồ sơ sinh viên"})
+}
+
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "ID không hợp lệ"})
+		return
+	}
+
+	err = h.userService.DeleteUser(c.Request.Context(), id)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(404, gin.H{"error": "Không tìm thấy sinh viên"})
+			return
+		}
+		if errors.Is(err, service.ErrStudentHasDiplomas) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		log.Printf("DeleteUser error: %v", err)
+		c.JSON(500, gin.H{"error": "Lỗi hệ thống"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Đã xóa hồ sơ sinh viên"})
+}
+
+func (h *UserHandler) ImportUsersFromExcel(c *gin.Context) {
+	val, exists := c.Get(string(utils.ClaimsContextKey))
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại"})
+		return
+	}
+	claims, ok := val.(*utils.CustomClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại"})
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Vui lòng chọn tệp Excel"})
+		return
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Không thể mở tệp"})
+		return
+	}
+	defer src.Close()
+
+	f, err := excelize.OpenReader(src)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tệp không đúng định dạng Excel"})
+		return
+	}
+
+	rows, err := f.GetRows("Sheet1")
+	if err != nil || len(rows) == 0 {
+		rows, err = f.GetRows("Sheet")
+		if err != nil || len(rows) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Không đọc được dữ liệu (trang tính Sheet1 hoặc Sheet)"})
+			return
+		}
+	}
+
+	var (
+		successResults []map[string]interface{}
+		errorResults   []map[string]interface{}
+	)
+
+	for i, row := range rows {
+		if i == 0 || len(row) < 7 {
+			continue
+		}
+
+		result := map[string]interface{}{"row": i + 1}
+
+		// Giới tính
+		gender := strings.EqualFold(strings.TrimSpace(getValue(row, 6)), "Nam")
+
+		// Parse ngày sinh, ngày vào đoàn, ngày vào đảng (trả về string)
+		dob := strings.TrimSpace(getValue(row, 7))
+		unionDate := strings.TrimSpace(getValue(row, 11))
+		partyDate := strings.TrimSpace(getValue(row, 12))
+
+		// Kiểm tra ngày sinh hợp lệ
+		if dob != "" {
+			if _, err := parseDate(dob); err != nil {
+				result["error"] = fmt.Sprintf("Ngày sinh không hợp lệ: %s", dob)
+				errorResults = append(errorResults, result)
+				continue
+			}
+		}
+
+		// Tạo user và chỉ gán nếu có giá trị
+		user := &models.CreateUserRequest{}
+
+		if val := strings.TrimSpace(getValue(row, 0)); val != "" {
+			user.StudentCode = val
+		}
+		if val := strings.TrimSpace(getValue(row, 1)); val != "" {
+			user.FullName = val
+		}
+		if val := strings.TrimSpace(getValue(row, 2)); val != "" {
+			user.Email = val
+		}
+		if val := strings.TrimSpace(getValue(row, 3)); val != "" {
+			user.FacultyCode = val
+		}
+		if val := strings.TrimSpace(getValue(row, 4)); val != "" {
+			user.Course = val
+		}
+		if val := strings.TrimSpace(getValue(row, 5)); val != "" {
+			user.CitizenIdNumber = val
+		}
+
+		user.Gender = gender
+
+		if dob != "" {
+			user.DateOfBirth = dob
+		}
+		if val := strings.TrimSpace(getValue(row, 8)); val != "" {
+			user.Ethnicity = val
+		}
+		if val := strings.TrimSpace(getValue(row, 9)); val != "" {
+			user.CurrentAddress = val
+		}
+		if val := strings.TrimSpace(getValue(row, 10)); val != "" {
+			user.BirthAddress = val
+		}
+		if unionDate != "" {
+			user.UnionJoinDate = unionDate
+		}
+		if partyDate != "" {
+			user.PartyJoinDate = partyDate
+		}
+		if val := strings.TrimSpace(getValue(row, 13)); val != "" {
+			user.Description = val
+		}
+
+		// Validate binding
+		if err := validator.New().Struct(user); err != nil {
+			if errs, ok := common.ParseValidationError(err); ok {
+				var messages []string
+				for _, msg := range errs {
+					messages = append(messages, msg)
+				}
+				result["error"] = strings.Join(messages, "; ")
+			} else {
+				result["error"] = "Dữ liệu không hợp lệ"
+			}
+			errorResults = append(errorResults, result)
+			continue
+		}
+
+		// Tạo user
+		_, err = h.userService.CreateUser(c.Request.Context(), claims, user)
+		if err != nil {
+			switch {
+			case errors.Is(err, common.ErrStudentIDExists):
+				result["error"] = "Mã sinh viên đã tồn tại"
+			case errors.Is(err, common.ErrEmailExists):
+				result["error"] = "Email đã tồn tại"
+			case errors.Is(err, common.ErrFacultyNotFound):
+				result["error"] = "Không tìm thấy chuyên ngành"
+			case errors.Is(err, common.ErrUniversityNotFound):
+				result["error"] = "Không tìm thấy trường đại học"
+			case errors.Is(err, service.ErrStudentEmailDomain):
+				result["error"] = err.Error()
+			default:
+				result["error"] = err.Error()
+			}
+			errorResults = append(errorResults, result)
+		} else {
+			result["status"] = "Thêm thành công"
+			successResults = append(successResults, result)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success_count": len(successResults),
+		"error_count":   len(errorResults),
+		"data": gin.H{
+			"success": successResults,
+			"error":   errorResults,
+		},
+	})
+}
+
+func getValue(row []string, index int) string {
+	if len(row) > index {
+		return strings.TrimSpace(row[index])
+	}
+	return ""
+}
+
+func parseDate(s string) (string, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", nil
+	}
+
+	layouts := []string{
+		"02-01-2006", // 04-09-2001
+		"02/01/2006", // 04/09/2001
+		"2006-01-02", // 2001-09-04
+		"02-01-06",   // 04-09-96
+		"02/01/06",   // 04/09/96
+	}
+
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, s); err == nil {
+			// Trả về theo định dạng chuẩn yyyy-MM-dd
+			return t.Format("2006-01-02"), nil
+		}
+	}
+
+	return "", fmt.Errorf("invalid date format: %s", s)
+}

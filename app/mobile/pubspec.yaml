@@ -1,0 +1,41 @@
+name: vbs_pqc_verify
+description: "Xác minh văn bằng số PQC: chữ ký ML-DSA, tệp PDF và Blockchain."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  mobile_scanner: ^6.0.2
+  permission_handler: ^11.3.1
+  image_picker: ^1.1.2
+  http: ^1.2.0
+  crypto: ^3.0.6
+  file_picker: ^10.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/app_logo.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  # Same emblem as the web app (app/frontend/public/assets/images/applogo.png).
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#001C46"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  remove_alpha_ios: true

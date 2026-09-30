@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Văn bằng</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  * { box-sizing: border-box; }
+  .page { position: relative; width: 297mm; height: 210mm; overflow: hidden; background: #fffaf0; color: #1f1f1f; font-family: 'Noto Serif', 'Times New Roman', serif; }
+  @media print { html, body { width: 297mm; height: 210mm; overflow: hidden; } }
+  @media screen {
+    body { background: #e6e6e6; padding: 16px 0; }
+    .page { margin: 0 auto; box-shadow: 0 8px 28px rgba(0, 0, 0, .18); zoom: var(--preview-zoom, 1); }
+  }
+
+  .frame-1 { position: absolute; top: 6mm; left: 6mm; right: 6mm; bottom: 6mm; border: 2.5mm solid #a11d21; }
+  .frame-2 { position: absolute; top: 10.5mm; left: 10.5mm; right: 10.5mm; bottom: 10.5mm; border: 1px solid #c9a227; }
+  .frame-3 { position: absolute; top: 12mm; left: 12mm; right: 12mm; bottom: 12mm; border: 3px double #c9a227; }
+
+  .content { position: absolute; top: 19mm; left: 30mm; right: 30mm; height: 116mm; overflow: hidden; text-align: center; font-size: 18px; }
+  .nation { font-weight: 700; font-size: 1em; letter-spacing: .03em; }
+  .motto { display: inline-block; margin-top: .15em; padding-bottom: .15em; border-bottom: 1px solid #1f1f1f; font-weight: 700; font-size: 1.05em; }
+  .issuer { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin-top: 1.2em; font-weight: 700; font-size: 1.1em; letter-spacing: .04em; text-transform: uppercase; }
+  .grant { margin-top: .2em; font-size: 1.05em; font-style: italic; }
+  .title { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin: .2em 0 .2em; font-weight: 700; font-size: 2.6em; letter-spacing: .08em; color: #a11d21; }
+  .major { font-size: 1.2em; }
+  .row { margin-top: .55em; font-size: 1.15em; }
+  .name { display: inline; font-weight: 700; font-size: 1.6em; color: #a11d21; }
+  .name-line { display: block; width: 100%; white-space: nowrap; overflow: hidden; }
+  .details { margin-top: .3em; font-size: 1.15em; line-height: 1.6; }
+  .sep { margin: 0 .6em; color: #c9a227; }
+
+  .bottom { position: absolute; left: 30mm; right: 30mm; bottom: 16mm; height: 52mm; }
+  .bottom table { width: 100%; height: 100%; border-collapse: collapse; }
+  .bottom td { width: 50%; padding: 0; }
+  .serials { vertical-align: bottom; text-align: left; font-size: 14px; line-height: 1.6; }
+  .sign { vertical-align: top; text-align: center; font-size: 17px; }
+  .sign-date { font-style: italic; }
+  .sign-title { margin-top: .3em; font-weight: 700; letter-spacing: .04em; }
+  .sign-space { position: relative; height: 30mm; }
+  .seal { position: absolute; top: .5mm; left: 50%; width: 32mm; height: 32mm; margin-left: -27mm; opacity: .92; }
+  .sign-name { font-weight: 700; font-size: 1.1em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="frame-1"></div>
+  <div class="frame-2"></div>
+  <div class="frame-3"></div>
+
+  <div class="content" data-fit-box>
+    <div class="nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+    <div class="motto">Độc lập - Tự do - Hạnh phúc</div>
+    <div class="issuer" data-fit-line>{{ .TenTruong }}</div>
+    <div class="grant">cấp</div>
+    <div class="title" data-fit-line>{{ .LoaiVanBang }}</div>
+    {{if .Nganh}}<div class="major">Ngành: <b>{{ .Nganh }}</b></div>{{end}}
+    <div class="row name-line" data-fit-line>Cho: <span class="name">{{ .HoTen }}</span></div>
+    <div class="details">
+      {{if .NgaySinh}}<div>Ngày sinh: <b>{{ .NgaySinh }}</b></div>{{end}}
+      {{if .XepLoai}}<div>Xếp loại tốt nghiệp: <b>{{ .XepLoai }}</b></div>{{end}}
+      <div>{{if .HinhThucDaoTao}}Hình thức đào tạo: <b>{{ .HinhThucDaoTao }}</b>{{end}}{{if and .HinhThucDaoTao .Khoa}}<span class="sep">|</span>{{end}}{{if .Khoa}}Khóa: <b>{{ .Khoa }}</b>{{end}}</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <table><tr>
+      <td class="serials">
+        Số hiệu: <b>{{ .SoHieu }}</b><br>
+        Số vào sổ cấp bằng: <b>{{ .SoVaoSo }}</b>
+      </td>
+      <td class="sign">
+        <div class="sign-date">{{ .NgayCapChu }}</div>
+        <div class="sign-title">{{ .ChucDanhKy }}</div>
+        <div class="sign-space">{{ .ConDau }}</div>
+        {{if .TenNguoiKy}}<div class="sign-name">{{ .TenNguoiKy }}</div>{{end}}
+      </td>
+    </tr></table>
+  </div>
+</div>
+<script>
+(function () {
+  function fontPx(el) { return parseFloat(window.getComputedStyle(el, null).fontSize); }
+  function all(selector) { return document.querySelectorAll(selector); }
+  function fit() {
+    var lines = all('[data-fit-line]'), boxes = all('[data-fit-box]'), i, el, size;
+    for (i = 0; i < boxes.length; i++) boxes[i].style.fontSize = '';
+    for (i = 0; i < lines.length; i++) lines[i].style.fontSize = '';
+    for (i = 0; i < lines.length; i++) {
+      el = lines[i]; size = fontPx(el);
+      while (el.scrollWidth > el.clientWidth + 1 && size > 9) { size -= 0.5; el.style.fontSize = size + 'px'; }
+    }
+    for (i = 0; i < boxes.length; i++) {
+      el = boxes[i]; size = fontPx(el);
+      while (el.scrollHeight > el.clientHeight + 1 && size > 9) { size -= 0.25; el.style.fontSize = size + 'px'; }
+    }
+  }
+  // On screen, shrink the whole page to fit the viewer (A4 landscape is
+  // 1123 x 794 px); printing always uses the true size.
+  function previewZoom() {
+    if (!window.matchMedia || !window.matchMedia('screen').matches) return;
+    var roomW = document.documentElement.clientWidth - 16;
+    var roomH = (window.innerHeight || document.documentElement.clientHeight) - 32;
+    var zoom = Math.min(1, roomW / 1123, roomH / 794);
+    if (zoom > 0) document.documentElement.style.setProperty('--preview-zoom', zoom.toFixed(3));
+  }
+  fit();
+  previewZoom();
+  window.addEventListener('resize', previewZoom);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>

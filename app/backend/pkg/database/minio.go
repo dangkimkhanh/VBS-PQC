@@ -1,0 +1,132 @@
+package database
+
+import (
+	"bytes"
+	"context"
+	"io"
+	"log"
+	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+)
+
+type MinioClient struct {
+	Client *minio.Client
+	Bucket string
+}
+
+func NewMinioClient(endpoint, accessKeyID, secretAccessKey, bucketName string, useSSL bool) (*MinioClient, error) {
+	client, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	exists, err := client.BucketExists(ctx, bucketName)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		if err = client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
+			return nil, err
+		}
+		log.Printf("Created bucket: %s\n", bucketName)
+	}
+
+	return &MinioClient{
+		Client: client,
+		Bucket: bucketName,
+	}, nil
+}
+
+func (m *MinioClient) UploadFile(ctx context.Context, objectName string, fileData []byte, contentType string) error {
+	reader := bytes.NewReader(fileData)
+	_, err := m.Client.PutObject(ctx, m.Bucket, objectName, reader, int64(len(fileData)), minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	return err
+}
+
+func LoadEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found, using system env variables")
+	}
+}
+
+func NewMinioClientFromEnv() (*MinioClient, error) {
+	LoadEnv()
+
+	endpoint := os.Getenv("MINIO_ENDPOINT")
+	accessKey := os.Getenv("MINIO_ACCESS_KEY")
+	secretKey := os.Getenv("MINIO_SECRET_KEY")
+	bucket := os.Getenv("MINIO_BUCKET")
+	useSSLStr := os.Getenv("MINIO_USE_SSL")
+
+	useSSL, err := strconv.ParseBool(useSSLStr)
+	if err != nil {
+		useSSL = false
+	}
+
+	return NewMinioClient(endpoint, accessKey, secretKey, bucket, useSSL)
+}
+
+func (m *MinioClient) GetFileURL(objectName string) string {
+	endpoint := os.Getenv("MINIO_ENDPOINT")
+	useSSL := os.Getenv("MINIO_USE_SSL")
+	scheme := "http"
+	if useSSL == "true" {
+		scheme = "https"
+	}
+	return scheme + "://" + endpoint + "/" + m.Bucket + "/" + objectName
+}
+func (m *MinioClient) DownloadFileStream(ctx context.Context, objectName string) (io.ReadCloser, string, error) {
+	object, err := m.Client.GetObject(ctx, m.Bucket, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Lấy metadata để lấy Content-Type
+	info, err := object.Stat()
+	if err != nil {
+		object.Close() // cần đóng lại nếu stat lỗi
+		return nil, "", err
+	}
+
+	return object, info.ContentType, nil
+}
+func (m *MinioClient) GetObject(ctx context.Context, bucket, object string) (io.ReadCloser, error) {
+	obj, err := m.Client.GetObject(ctx, bucket, object, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	// Kiểm tra lỗi khi truy cập file
+	_, err = obj.Stat()
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func (m *MinioClient) DownloadFile(ctx context.Context, bucket, object string) ([]byte, error) {
+	obj, err := m.Client.GetObject(ctx, bucket, object, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer obj.Close()
+
+	return io.ReadAll(obj)
+}
+func (m *MinioClient) RemoveFile(ctx context.Context, objectName string) error {
+	err := m.Client.RemoveObject(ctx, m.Bucket, objectName, minio.RemoveObjectOptions{})
+	if err != nil {
+		log.Printf("[WARN] Failed to remove object from MinIO: %v", err)
+	}
+	return err
+}

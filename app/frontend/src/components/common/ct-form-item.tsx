@@ -1,0 +1,271 @@
+'use client'
+import { type CustomFormItem } from '@/types/common'
+import { Input } from '../ui/input'
+import { FormDescription, FormMessage, FormControl, FormField, FormLabel, FormItem } from '../ui/form'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select'
+import QuerySelect from './query-select'
+import RoundPicker from './round-picker'
+import { Check, ChevronsUpDown, Eye, EyeOff, Trash } from 'lucide-react'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover'
+import { Button } from '../ui/button'
+import { cn } from '@/lib/utils/common'
+import { useState } from 'react'
+import { Textarea } from '../ui/textarea'
+import { formatBytes } from '@/lib/utils/common'
+
+const CustomFormItem: React.FC<CustomFormItem> = (props) => {
+  const [showPassword, setShowPassword] = useState(false)
+
+  switch (props.type) {
+    case 'input':
+      return (
+        <FormField
+          control={props.control}
+          name={props.name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{props.label}</FormLabel>
+              <FormControl>
+                <div className='relative'>
+                  <Input
+                    placeholder={props.placeholder}
+                    {...field}
+                    disabled={props.disabled}
+                    type={
+                      props.setting?.input?.type === 'password'
+                        ? showPassword
+                          ? 'text'
+                          : 'password'
+                        : props.setting?.input?.type || 'text'
+                    }
+                    onChange={(e) => {
+                      if (props.setting?.input?.type === 'number') {
+                        const value = e.target.value === '' ? '' : Number(e.target.value)
+                        field.onChange(value)
+                      } else {
+                        field.onChange(e.target.value)
+                      }
+                    }}
+                    className={props.setting?.input?.type === 'password' ? 'pr-10' : ''}
+                  />
+                  {props.setting?.input?.type === 'password' && (
+                    <span
+                      className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700'
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
+                    </span>
+                  )}
+                </div>
+              </FormControl>
+              {props.description && <FormDescription className='!mt-1'>{props.description}</FormDescription>}
+              <FormMessage className={`${props.description ? '!mt-0' : '!mt-1'}`} />
+            </FormItem>
+          )}
+        />
+      )
+    case 'select':
+      return (
+        <FormField
+          control={props.control}
+          name={props.name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{props.label}</FormLabel>
+              <Select
+                disabled={props.disabled}
+                onValueChange={field.onChange}
+                value={field.value}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder={props.placeholder} />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {props.setting?.select?.groups?.length && props.setting?.select?.groups?.length > 0 ? (
+                    props.setting?.select?.groups?.map((group, index) => (
+                      <SelectGroup key={index}>
+                        {group.label && <SelectLabel>{group.label}</SelectLabel>}
+                        {group.options.map((option, index) => (
+                          <SelectItem key={index} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))
+                  ) : (
+                    <div className='flex h-16 items-center justify-center px-5 text-sm'>Không có dữ liệu</div>
+                  )}
+                </SelectContent>
+              </Select>
+              {props.description && <FormDescription className='!mt-1'>{props.description}</FormDescription>}
+              <FormMessage className={`${props.description ? '!mt-0' : '!mt-1'}`} />
+            </FormItem>
+          )}
+        />
+      )
+    case 'search_select':
+      return (
+        <FormField
+          control={props.control}
+          name={props.name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className=''>{props.label}</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant='outline'
+                      role='combobox'
+                      className={cn(
+                        'w-full justify-between px-3 py-1 hover:bg-background',
+                        !field.value && 'text-muted-foreground hover:text-muted-foreground'
+                      )}
+                      disabled={props.disabled}
+                    >
+                      {field.value
+                        ? props.setting?.select?.groups
+                            ?.flatMap((group) => group.options)
+                            ?.find((option) => option.value === field.value)?.label
+                        : props.placeholder || 'Tìm kiếm và chọn'}
+                      <ChevronsUpDown className='opacity-50' />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className='w-[250px] p-0'>
+                  <Command>
+                    <CommandInput placeholder={'Nhập để tìm kiếm'} className='h-9' />
+                    <CommandList>
+                      <CommandEmpty>Không tìm thấy kết quả</CommandEmpty>
+                      {props.setting?.select?.groups?.map((group, groupIndex) => (
+                        <CommandGroup key={groupIndex} heading={group.label}>
+                          {group.options.map((option) => (
+                            <CommandItem
+                              key={option.value}
+                              value={option.label}
+                              onSelect={(currentValue) => {
+                                const selectedOption = group.options.find(
+                                  (opt) => opt.label.toLowerCase() === currentValue.toLowerCase()
+                                )
+                                if (selectedOption) {
+                                  field.onChange(selectedOption.value === field.value ? '' : selectedOption.value)
+                                }
+                              }}
+                            >
+                              {option.label}
+                              <Check
+                                className={cn('ml-auto', field.value === option.value ? 'opacity-100' : 'opacity-0')}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ))}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {props.description && <FormDescription className='!mt-1'>{props.description}</FormDescription>}
+              <FormMessage className={`${props.description ? '!mt-0' : '!mt-1'}`} />
+            </FormItem>
+          )}
+        />
+      )
+    case 'query_select':
+      return <QuerySelect {...props} />
+    case 'round_select':
+      return (
+        <FormField
+          control={props.control}
+          name={props.name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{props.label}</FormLabel>
+              <FormControl>
+                <RoundPicker
+                  value={field.value || ''}
+                  onChange={(id) => field.onChange(id)}
+                  allowNone={props.setting?.roundSelect?.allowNone}
+                  placeholder={props.placeholder}
+                  disabled={props.disabled}
+                />
+              </FormControl>
+              {props.description && <FormDescription className='!mt-1'>{props.description}</FormDescription>}
+              <FormMessage className={`${props.description ? '!mt-0' : '!mt-1'}`} />
+            </FormItem>
+          )}
+        />
+      )
+    case 'textarea':
+      return (
+        <FormField
+          control={props.control}
+          name={props.name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{props.label}</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder={props.placeholder}
+                  disabled={props.disabled}
+                  rows={props.setting?.textarea?.rows || 3}
+                />
+              </FormControl>
+              {props.description && <FormDescription className='!mt-1'>{props.description}</FormDescription>}
+              <FormMessage className={`${props.description ? '!mt-0' : '!mt-1'}`} />
+            </FormItem>
+          )}
+        />
+      )
+    case 'file':
+      return (
+        <FormField
+          control={props.control}
+          name={props.name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{props.label}</FormLabel>
+              <FormControl>
+                <div>
+                  <Input
+                    type='file'
+                    accept={props.setting?.file?.accept}
+                    disabled={props.disabled}
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null
+                      field.onChange(file)
+                    }}
+                  />
+                  {field.value ? (
+                    <div className='mt-2 flex items-center justify-between rounded-md border px-3 py-2 text-sm'>
+                      <div className='min-w-0'>
+                        <div className='truncate font-medium'>{(field.value as File).name}</div>
+                        <div className='text-muted-foreground'>
+                          {((field.value as File).type || 'Unknown type') +
+                            ' • ' +
+                            formatBytes((field.value as File).size)}
+                        </div>
+                      </div>
+                      <Button type='button' variant='destructive' size='icon' onClick={() => field.onChange(null)}>
+                        <Trash />
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </FormControl>
+              {props.description && <FormDescription className='!mt-1'>{props.description}</FormDescription>}
+              <FormMessage className={`${props.description ? '!mt-0' : '!mt-1'}`} />
+            </FormItem>
+          )}
+        />
+      )
+    default:
+      return null
+  }
+}
+
+export default CustomFormItem

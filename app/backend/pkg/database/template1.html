@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Văn bằng</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  * { box-sizing: border-box; }
+  .page { position: relative; width: 297mm; height: 210mm; overflow: hidden; background: #fdfcf7; color: #2b2b2b; font-family: 'EB Garamond', 'Times New Roman', serif; }
+  @media print { html, body { width: 297mm; height: 210mm; overflow: hidden; } }
+  @media screen {
+    body { background: #e6e6e6; padding: 16px 0; }
+    .page { margin: 0 auto; box-shadow: 0 8px 28px rgba(0, 0, 0, .18); zoom: var(--preview-zoom, 1); }
+  }
+
+  .frame-outer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border: 4mm solid #0d3d6f; }
+  .frame-inner { position: absolute; top: 8mm; left: 8mm; right: 8mm; bottom: 8mm; border: 3px double #a47b37; }
+  .corner { position: absolute; width: 5mm; height: 5mm; border: 1.5px solid #a47b37; background: #fdfcf7; }
+  .tl { top: -2.8mm; left: -2.8mm; } .tr { top: -2.8mm; right: -2.8mm; }
+  .bl { bottom: -2.8mm; left: -2.8mm; } .br { bottom: -2.8mm; right: -2.8mm; }
+  .watermark { position: absolute; top: 50%; left: 50%; width: 110mm; height: 110mm; margin: -55mm 0 0 -55mm; opacity: .06; color: #0d3d6f; }
+
+  .content { position: absolute; top: 17mm; left: 28mm; right: 28mm; height: 118mm; overflow: hidden; text-align: center; font-size: 18px; }
+  .nation { font-family: 'Montserrat', Arial, sans-serif; font-weight: 700; font-size: 1em; letter-spacing: .04em; }
+  .motto { display: inline-block; margin-top: .2em; padding-bottom: .15em; border-bottom: 1px solid #2b2b2b; font-size: 1.1em; font-style: italic; }
+  .issuer { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin-top: 1.1em; font-family: 'Montserrat', Arial, sans-serif; font-weight: 700; font-size: 1.05em; letter-spacing: .06em; text-transform: uppercase; }
+  .grant { margin-top: .25em; font-size: 1.05em; font-style: italic; }
+  .title { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin: .25em 0 .15em; font-family: 'Montserrat', Arial, sans-serif; font-weight: 700; font-size: 2.6em; letter-spacing: .12em; color: #0d3d6f; }
+  .major { font-size: 1.2em; }
+  .for { margin-top: .4em; margin-bottom: .35em; font-size: 1.05em; font-style: italic; }
+  .name { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin: .05em 0 .1em; font-family: 'Great Vibes', 'EB Garamond', cursive; font-size: 3.7em; line-height: 1.2; color: #9a6f25; }
+  .details { font-size: 1.15em; line-height: 1.6; }
+  .sep { margin: 0 .6em; color: #a47b37; }
+
+  .bottom { position: absolute; left: 28mm; right: 28mm; bottom: 15mm; height: 52mm; }
+  .bottom table { width: 100%; height: 100%; border-collapse: collapse; }
+  .bottom td { width: 50%; padding: 0; }
+  .serials { vertical-align: bottom; text-align: left; font-size: 14px; line-height: 1.6; color: #444; }
+  .sign { vertical-align: top; text-align: center; font-size: 17px; }
+  .sign-date { font-style: italic; }
+  .sign-title { margin-top: .3em; font-family: 'Montserrat', Arial, sans-serif; font-weight: 700; letter-spacing: .05em; }
+  .sign-space { position: relative; height: 30mm; }
+  .seal { position: absolute; top: .5mm; left: 50%; width: 32mm; height: 32mm; margin-left: -27mm; opacity: .92; }
+  .sign-name { font-weight: 700; font-size: 1.15em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="frame-outer"></div>
+  <div class="frame-inner">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  </div>
+  <svg class="watermark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+    <path d="M256 0c-12.24 0-24.13 1.83-35.5 5.23C124.44 36.7 64 134.63 64 240c0 49.33 17.55 94.55 47.31 130.65C141.4 419.6 195.31 448 256 448s114.6-28.4 144.69-77.35C430.45 334.55 448 289.33 448 240c0-105.37-60.44-203.3-156.5-234.77C280.13 1.83 268.24 0 256 0zm0 48c52.88 0 98.05 24.17 124.69 61.33C407.25 146.5 416 190.84 416 240c0 88.22-55.27 169.31-131.31 201.35C271.85 445.83 264.12 448 256 448s-15.85-2.17-28.69-6.65C151.27 409.31 96 328.22 96 240c0-49.16 8.75-93.5 35.31-130.67C157.95 72.17 203.12 48 256 48z"/>
+    <path d="M256 128c-61.75 0-112 50.25-112 112s50.25 112 112 112 112-50.25 112-112-50.25-112-112-112zm0 192c-44.11 0-80-35.89-80-80s35.89-80 80-80 80 35.89 80 80-35.89 80-80 80z"/>
+  </svg>
+
+  <div class="content" data-fit-box>
+    <div class="nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+    <div class="motto">Độc lập - Tự do - Hạnh phúc</div>
+    <div class="issuer" data-fit-line>{{ .TenTruong }}</div>
+    <div class="grant">cấp</div>
+    <div class="title" data-fit-line>{{ .LoaiVanBang }}</div>
+    {{if .Nganh}}<div class="major">Ngành: <b>{{ .Nganh }}</b></div>{{end}}
+    <div class="for">Cho</div>
+    <div class="name" data-fit-line>{{ .HoTen }}</div>
+    <div class="details">
+      {{if .NgaySinh}}<div>Ngày sinh: <b>{{ .NgaySinh }}</b></div>{{end}}
+      {{if .XepLoai}}<div>Xếp loại tốt nghiệp: <b>{{ .XepLoai }}</b></div>{{end}}
+      <div>{{if .HinhThucDaoTao}}Hình thức đào tạo: <b>{{ .HinhThucDaoTao }}</b>{{end}}{{if and .HinhThucDaoTao .Khoa}}<span class="sep">|</span>{{end}}{{if .Khoa}}Khóa: <b>{{ .Khoa }}</b>{{end}}</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <table><tr>
+      <td class="serials">
+        Số hiệu: <b>{{ .SoHieu }}</b><br>
+        Số vào sổ cấp bằng: <b>{{ .SoVaoSo }}</b>
+      </td>
+      <td class="sign">
+        <div class="sign-date">{{ .NgayCapChu }}</div>
+        <div class="sign-title">{{ .ChucDanhKy }}</div>
+        <div class="sign-space">{{ .ConDau }}</div>
+        {{if .TenNguoiKy}}<div class="sign-name">{{ .TenNguoiKy }}</div>{{end}}
+      </td>
+    </tr></table>
+  </div>
+</div>
+<script>
+(function () {
+  function fontPx(el) { return parseFloat(window.getComputedStyle(el, null).fontSize); }
+  function all(selector) { return document.querySelectorAll(selector); }
+  function fit() {
+    var lines = all('[data-fit-line]'), boxes = all('[data-fit-box]'), i, el, size;
+    for (i = 0; i < boxes.length; i++) boxes[i].style.fontSize = '';
+    for (i = 0; i < lines.length; i++) lines[i].style.fontSize = '';
+    for (i = 0; i < lines.length; i++) {
+      el = lines[i]; size = fontPx(el);
+      while (el.scrollWidth > el.clientWidth + 1 && size > 9) { size -= 0.5; el.style.fontSize = size + 'px'; }
+    }
+    for (i = 0; i < boxes.length; i++) {
+      el = boxes[i]; size = fontPx(el);
+      while (el.scrollHeight > el.clientHeight + 1 && size > 9) { size -= 0.25; el.style.fontSize = size + 'px'; }
+    }
+  }
+  // On screen, shrink the whole page to fit the viewer (A4 landscape is
+  // 1123 x 794 px); printing always uses the true size.
+  function previewZoom() {
+    if (!window.matchMedia || !window.matchMedia('screen').matches) return;
+    var roomW = document.documentElement.clientWidth - 16;
+    var roomH = (window.innerHeight || document.documentElement.clientHeight) - 32;
+    var zoom = Math.min(1, roomW / 1123, roomH / 794);
+    if (zoom > 0) document.documentElement.style.setProperty('--preview-zoom', zoom.toFixed(3));
+  }
+  fit();
+  previewZoom();
+  window.addEventListener('resize', previewZoom);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>

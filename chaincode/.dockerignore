@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+.idea
+dist
+*.tar.gz
+*.bak
+*.bak.*
+*.log
+Dockerfile.*
+README.md
+contractapi/contractapi
+kmasc-chaincode

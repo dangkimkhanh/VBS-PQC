@@ -1,0 +1,7 @@
+dist/
+*.tar.gz
+*.bak
+*.bak.*
+*.log
+/contractapi/contractapi
+/kmasc-chaincode

@@ -1,0 +1,153 @@
+package models
+
+import (
+	"go.mongodb.org/mongo-driver/bson"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type EDiploma struct {
+	History         []bson.M           `bson:"history,omitempty" json:"-"`
+	ReplacesID      string             `bson:"replaces_id,omitempty" json:"replaces_id,omitempty"`
+	RevokedBy       string             `bson:"revoked_by,omitempty" json:"revoked_by,omitempty"`
+	ID              primitive.ObjectID `bson:"_id" json:"id"`
+	TemplateID      primitive.ObjectID `bson:"template_id" json:"template_id"` // Liên kết mẫu đã được Bộ duyệt
+	Name            string             `bson:"name" json:"name"`               // Tên văn bằng
+	UniversityID    primitive.ObjectID `bson:"university_id" json:"university_id"`
+	FacultyID       primitive.ObjectID `bson:"faculty_id" json:"faculty_id"`
+	UserID          primitive.ObjectID `bson:"user_id" json:"user_id"`
+	MajorID         primitive.ObjectID `bson:"major_id" json:"major_id"`
+	StudentCode     string             `bson:"student_code" json:"student_code"`
+	FullName        string             `bson:"full_name" json:"full_name"`
+	CertificateType string             `bson:"certificate_type" json:"certificate_type"` // Cử nhân, Thạc sĩ...
+	Course          string             `bson:"course" json:"course"`                     // Khóa học (VD: AT18)
+	EducationType   string             `bson:"education_type" json:"education_type"`     // Chính quy, Tại chức...
+	GPA             float64            `bson:"gpa" json:"gpa"`
+	GraduationRank  string             `bson:"graduation_rank" json:"graduation_rank"`
+	IssueDate       time.Time          `bson:"issue_date" json:"issue_date"`
+
+	SerialNumber       string     `bson:"serial_number" json:"serial_number"`             // Số hiệu
+	RegistrationNumber string     `bson:"registration_number" json:"registration_number"` // Số vào sổ
+	EDiplomaFileLink   string     `bson:"ediploma_file_link" json:"ediploma_file_link"`   // Đường dẫn đến file văn bằng số
+	EDiplomaFileHash   string     `bson:"ediploma_file_hash" json:"ediploma_file_hash"`   // Mã băm của văn bằng số
+	Signature          string     `bson:"signature" json:"signature"`                     // Chữ ký số
+	Signed             bool       `bson:"signed" json:"signed"`                           // Đã ký hay chưa
+	DataEncrypted      bool       `bson:"data_encrypted" json:"data_encrypted"`           //Đã mã hóa dữ liệu hay chưa
+	Issued             bool       `bson:"issued" json:"issued"`                           // Đã cấp bằng số hay chưa
+	Revoked            bool       `bson:"revoked" json:"revoked"`
+	RevokedAt          *time.Time `bson:"revoked_at,omitempty" json:"revoked_at,omitempty"`
+	RevocationReason   string     `bson:"revocation_reason,omitempty" json:"revocation_reason,omitempty"`
+	SignedAt           time.Time  `bson:"signed_at,omitempty" json:"signed_at,omitempty"`
+	// SealAlgorithm is the ML-DSA parameter set printed in the PDF stamp; signing
+	// must use a key with the same parameter set.
+	SealAlgorithm string    `bson:"seal_algorithm,omitempty" json:"seal_algorithm,omitempty"`
+	PQCProof      *PQCProof `bson:"pqc_proof,omitempty" json:"pqc_proof,omitempty"`
+
+	// Blockchain & trạng thái
+	OnBlockchain       bool                `bson:"on_blockchain" json:"on_blockchain"`
+	OnBlockchainVerify *OnBlockchainVerify `bson:"on_blockchain_verify,omitempty" json:"on_blockchain_verify,omitempty"`
+	MerkleProof        []ProofNode         `bson:"merkle_proof,omitempty" json:"merkle_proof,omitempty"`
+	BatchID            string              `bson:"batch_id,omitempty" json:"batch_id,omitempty"`
+	TransactionID      string              `bson:"transaction_id,omitempty" json:"transaction_id,omitempty"`
+	BlockchainTxID     string              `bson:"blockchain_tx_id,omitempty" json:"blockchain_tx_id,omitempty"`
+	// Revocation written to Fabric (RevokeEDiplomaBatch).
+	RevocationOnChain bool   `bson:"revocation_on_chain,omitempty" json:"revocation_on_chain,omitempty"`
+	RevocationID      string `bson:"revocation_id,omitempty" json:"revocation_id,omitempty"`
+	RevocationTxID    string `bson:"revocation_tx_id,omitempty" json:"revocation_tx_id,omitempty"`
+
+	// RoundID is the issuance round the diploma was imported into.
+	RoundID primitive.ObjectID `bson:"round_id,omitempty" json:"round_id,omitempty"`
+
+	SignatureOfUni    string `bson:"signature_of_uni,omitempty" json:"signatureOfUni,omitempty"`
+	SignatureOfMinEdu string `bson:"signature_of_minedu,omitempty" json:"signatureOfMinEdu,omitempty"`
+
+	// Metadata
+	Description string    `bson:"description,omitempty" json:"description,omitempty"`
+	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+type EDiplomaResponse struct {
+	ReplacesID         string              `json:"replaces_id,omitempty"`
+	RevokedBy          string              `json:"revoked_by,omitempty"`
+	ID                 primitive.ObjectID  `json:"id"`
+	UniversityID       primitive.ObjectID  `json:"university_id"`
+	Name               string              `json:"name"`
+	TemplateName       string              `json:"template_name"`
+	UniversityCode     string              `json:"university_code"`
+	UniversityName     string              `json:"university_name"`
+	FacultyID          primitive.ObjectID  `json:"faculty_id"`
+	FacultyCode        string              `json:"faculty_code"`
+	FacultyName        string              `json:"faculty_name"`
+	StudentName        string              `json:"student_name"`
+	StudentCode        string              `json:"student_code"`
+	FullName           string              `json:"full_name"`
+	CertificateType    string              `json:"certificate_type"`
+	Course             string              `json:"course"`
+	EducationType      string              `json:"education_type"`
+	GPA                float64             `json:"gpa"`
+	GraduationRank     string              `json:"graduation_rank"`
+	IssueDate          string              `json:"issue_date"`
+	SerialNumber       string              `json:"serial_number"`
+	RegistrationNumber string              `json:"registration_number"`
+	Issued             bool                `json:"issued"`
+	Revoked            bool                `json:"revoked"`
+	RevokedAt          *time.Time          `json:"revoked_at,omitempty"`
+	RevocationReason   string              `json:"revocation_reason,omitempty"`
+	Signed             bool                `json:"signed"`
+	PQCProof           *PQCProof           `json:"pqc_proof,omitempty"`
+	DataEncrypted      bool                `json:"data_encrypted"`
+	OnBlockchain       bool                `json:"on_blockchain"`
+	OnBlockchainVerify *OnBlockchainVerify `json:"on_blockchain_verify,omitempty"`
+	RevocationOnChain  bool                `json:"revocation_on_chain"`
+	RoundID            string              `json:"round_id,omitempty"`
+	RoundName          string              `json:"round_name,omitempty"`
+}
+type EDiplomaSearchFilter struct {
+	UniversityID    string `json:"university_id"`
+	FacultyID       string `json:"faculty_id"`
+	CertificateType string `json:"certificate_type"`
+	Course          string `json:"course"`
+	Issued          *bool  `json:"issued"`
+	Revoked         *bool  `json:"revoked"`
+	RoundID         string `json:"round_id"` // a round ID, RoundFilterNone, or empty for all
+	Keyword         string `json:"keyword"`  // part of the student code or name
+	Page            int    `json:"page"`
+	PageSize        int    `json:"page_size"`
+}
+
+type EDiplomaBatchOnChain struct {
+	BatchID           string                     `json:"batch_id"`
+	UniversityID      string                     `json:"university_id"`
+	FacultyID         string                     `json:"faculty_id"`
+	CertificateType   string                     `json:"certificate_type"`
+	Course            string                     `json:"course"`
+	AggregateInfoHash string                     `json:"aggregate_info_hash"`
+	AggregateFileHash string                     `json:"aggregate_file_hash"`
+	Count             int                        `json:"count"`
+	PQCTransaction    *PQCTransactionAttestation `json:"pqc_transaction,omitempty"`
+	TxID              string                     `json:"tx_id,omitempty"`
+	CreatedAt         string                     `json:"created_at,omitempty"`
+}
+type EDiplomaSimpleResponse struct {
+	ID                 string              `json:"id"`
+	Name               string              `json:"name"`
+	Revoked            bool                `json:"revoked"`
+	OnBlockchainVerify *OnBlockchainVerify `json:"on_blockchain_verify"`
+}
+
+type CreateEDiplomaRequest struct {
+	StudentCode        string             `json:"student_code" binding:"required"`
+	Name               string             `json:"name" binding:"required"`
+	CertificateType    string             `json:"certificate_type"`
+	Course             string             `json:"course"`
+	EducationType      string             `json:"education_type"`
+	GPA                float64            `json:"gpa"`
+	GraduationRank     string             `json:"graduation_rank"`
+	IssueDate          time.Time          `json:"issue_date" binding:"required"`
+	SerialNumber       string             `json:"serial_number" binding:"required"`
+	RegistrationNumber string             `json:"registration_number" binding:"required"`
+	Description        string             `json:"description"`
+	RoundID            primitive.ObjectID `json:"-"`
+}

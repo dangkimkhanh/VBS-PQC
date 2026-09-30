@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Văn bằng</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  * { box-sizing: border-box; }
+  .page { position: relative; width: 297mm; height: 210mm; overflow: hidden; background: #ffffff; color: #262626; font-family: 'Be Vietnam Pro', Arial, sans-serif; }
+  @media print { html, body { width: 297mm; height: 210mm; overflow: hidden; } }
+  @media screen {
+    body { background: #e6e6e6; padding: 16px 0; }
+    .page { margin: 0 auto; box-shadow: 0 8px 28px rgba(0, 0, 0, .18); zoom: var(--preview-zoom, 1); }
+  }
+
+  .band { position: absolute; top: 0; left: 0; right: 0; height: 46mm; background: #b3121b; color: #ffffff; text-align: center; padding: 8mm 25mm 0; font-size: 16px; }
+  .band-line { position: absolute; left: 0; right: 0; top: 46mm; height: 1.6mm; background: #d9a441; }
+  .nation { font-weight: 700; font-size: 1em; letter-spacing: .05em; }
+  .motto { display: inline-block; margin-top: .2em; padding-bottom: .15em; border-bottom: 1px solid rgba(255, 255, 255, .7); font-size: 1.05em; font-style: italic; }
+  .issuer { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin-top: .9em; font-weight: 700; font-size: 1.2em; letter-spacing: .06em; text-transform: uppercase; }
+  .edge { position: absolute; top: 47.6mm; bottom: 0; width: 4mm; background: #f4e3c1; }
+  .edge.left { left: 0; } .edge.right { right: 0; }
+
+  .content { position: absolute; top: 55mm; left: 28mm; right: 28mm; height: 88mm; overflow: hidden; text-align: center; font-size: 18px; }
+  .grant { font-size: 1em; font-style: italic; color: #555; }
+  .title { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin: .15em 0 .2em; font-weight: 700; font-size: 2.5em; letter-spacing: .1em; color: #262626; }
+  .major { font-size: 1.15em; }
+  .for { margin-top: .6em; font-size: 1em; font-style: italic; color: #555; }
+  .name { display: block; width: 100%; white-space: nowrap; overflow: hidden; margin: .05em 0 .25em; font-weight: 700; font-size: 2.4em; color: #b3121b; }
+  .details { font-size: 1.1em; line-height: 1.6; }
+  .sep { margin: 0 .6em; color: #d9a441; }
+
+  .bottom { position: absolute; left: 28mm; right: 28mm; bottom: 10mm; height: 52mm; }
+  .bottom table { width: 100%; height: 100%; border-collapse: collapse; }
+  .bottom td { width: 50%; padding: 0; }
+  .serials { vertical-align: bottom; text-align: left; font-size: 14px; line-height: 1.6; color: #444; }
+  .sign { vertical-align: top; text-align: center; font-size: 17px; }
+  .sign-date { font-style: italic; }
+  .sign-title { margin-top: .3em; font-weight: 700; letter-spacing: .05em; }
+  .sign-space { position: relative; height: 30mm; }
+  .seal { position: absolute; top: .5mm; left: 50%; width: 32mm; height: 32mm; margin-left: -27mm; opacity: .92; }
+  .sign-name { font-weight: 700; font-size: 1.1em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="band">
+    <div class="nation">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+    <div class="motto">Độc lập - Tự do - Hạnh phúc</div>
+    <div class="issuer" data-fit-line>{{ .TenTruong }}</div>
+  </div>
+  <div class="band-line"></div>
+  <div class="edge left"></div><div class="edge right"></div>
+
+  <div class="content" data-fit-box>
+    <div class="grant">cấp</div>
+    <div class="title" data-fit-line>{{ .LoaiVanBang }}</div>
+    {{if .Nganh}}<div class="major">Ngành: <b>{{ .Nganh }}</b></div>{{end}}
+    <div class="for">Cho</div>
+    <div class="name" data-fit-line>{{ .HoTen }}</div>
+    <div class="details">
+      {{if .NgaySinh}}<div>Ngày sinh: <b>{{ .NgaySinh }}</b></div>{{end}}
+      {{if .XepLoai}}<div>Xếp loại tốt nghiệp: <b>{{ .XepLoai }}</b></div>{{end}}
+      <div>{{if .HinhThucDaoTao}}Hình thức đào tạo: <b>{{ .HinhThucDaoTao }}</b>{{end}}{{if and .HinhThucDaoTao .Khoa}}<span class="sep">|</span>{{end}}{{if .Khoa}}Khóa: <b>{{ .Khoa }}</b>{{end}}</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <table><tr>
+      <td class="serials">
+        Số hiệu: <b>{{ .SoHieu }}</b><br>
+        Số vào sổ cấp bằng: <b>{{ .SoVaoSo }}</b>
+      </td>
+      <td class="sign">
+        <div class="sign-date">{{ .NgayCapChu }}</div>
+        <div class="sign-title">{{ .ChucDanhKy }}</div>
+        <div class="sign-space">{{ .ConDau }}</div>
+        {{if .TenNguoiKy}}<div class="sign-name">{{ .TenNguoiKy }}</div>{{end}}
+      </td>
+    </tr></table>
+  </div>
+</div>
+<script>
+(function () {
+  function fontPx(el) { return parseFloat(window.getComputedStyle(el, null).fontSize); }
+  function all(selector) { return document.querySelectorAll(selector); }
+  function fit() {
+    var lines = all('[data-fit-line]'), boxes = all('[data-fit-box]'), i, el, size;
+    for (i = 0; i < boxes.length; i++) boxes[i].style.fontSize = '';
+    for (i = 0; i < lines.length; i++) lines[i].style.fontSize = '';
+    for (i = 0; i < lines.length; i++) {
+      el = lines[i]; size = fontPx(el);
+      while (el.scrollWidth > el.clientWidth + 1 && size > 9) { size -= 0.5; el.style.fontSize = size + 'px'; }
+    }
+    for (i = 0; i < boxes.length; i++) {
+      el = boxes[i]; size = fontPx(el);
+      while (el.scrollHeight > el.clientHeight + 1 && size > 9) { size -= 0.25; el.style.fontSize = size + 'px'; }
+    }
+  }
+  // On screen, shrink the whole page to fit the viewer (A4 landscape is
+  // 1123 x 794 px); printing always uses the true size.
+  function previewZoom() {
+    if (!window.matchMedia || !window.matchMedia('screen').matches) return;
+    var roomW = document.documentElement.clientWidth - 16;
+    var roomH = (window.innerHeight || document.documentElement.clientHeight) - 32;
+    var zoom = Math.min(1, roomW / 1123, roomH / 794);
+    if (zoom > 0) document.documentElement.style.setProperty('--preview-zoom', zoom.toFixed(3));
+  }
+  fit();
+  previewZoom();
+  window.addEventListener('resize', previewZoom);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>

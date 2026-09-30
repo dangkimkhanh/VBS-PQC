@@ -1,0 +1,17 @@
+[Unit]
+Description=VBS PQC backend (Go API)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=vbs
+# The backend reads .env, the diploma templates (pkg/database) and the Fabric
+# certificates (secrets/fabric) relative to this directory.
+WorkingDirectory=/opt/vbs-pqc/app/backend
+Environment=GIN_MODE=release
+ExecStart=/opt/vbs-pqc/app/backend/bin/server
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
